@@ -70,6 +70,12 @@ body {
   transform: scale(1.1);
 }
 
+#loading {
+  display: none;
+  font-weight: bold;
+  font-size: 18px;
+}
+
 .errors {
   width: 400px;
   margin: auto;

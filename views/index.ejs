@@ -13,15 +13,25 @@
   </head>
   <body>
     <div class="top-container">
-      <form action="/convert-mp3" method="POST" id="form">
-
+      <form action="/search-video" method="POST" id="form">
         <h1><i class="fab fa-youtube"></i>Song 2 U</h1>
-        <h4>Enter the video ID</h4>
+        <h4>Insira abaixo o link do YouTube</h4>
         <div>
-          <input type="text" name="videoID" placeholder="Video ID" />
-          <button id="convert-btn">Convert</button>
-        </form>
-      </div>
+          <input type="text" name="videoUrl" placeholder="Link do YouTube" />
+          <button id="convert-btn">Buscar</button>
+          <div id="loading" style="display: none">🔄 Carregando...</div>
+        </div>
+      </form>
+    </div>
+
+    <div class="container">
+      <% if (typeof valid != "undefined" && valid ) { %>
+      <h2><%= message %></h2>
+      <h3>Título: <%= videoData.video_details.title %></h3>
+      <img src="<%= videoData.video_details.thumbnail.url %>" alt="Thumbnail" />
+      <% } else { %>
+      <h2><%= message %></h2>
+      <% } %>
     </div>
 
     <div class="bottom-container">
