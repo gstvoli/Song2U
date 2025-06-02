@@ -14,39 +14,34 @@
   <body>
     <div class="top-container">
       <form action="/search-video" method="POST" id="form">
-        <h1><i class="fab fa-youtube"></i>Song 2 U</h1>
+        <a href="/" style="text-decoration: none; color: white"
+          ><h1><i class="fab fa-youtube"></i>Song 2 U</h1></a
+        >
         <h4>Insira abaixo o link do YouTube</h4>
         <div>
-          <input type="text" name="videoUrl" placeholder="Link do YouTube" />
-          <button id="convert-btn">Buscar</button>
+          <input
+            type="text"
+            id="videoUrl"
+            name="videoUrl"
+            placeholder="Link do YouTube"
+          />
+          <button id="search-btn">Buscar</button>
           <div id="loading" style="display: none">🔄 Carregando...</div>
         </div>
       </form>
     </div>
 
     <div class="container">
-      <% if (typeof valid != "undefined" && valid ) { %>
+      <% if (typeof success != "undefined" && success ) { %>
       <h2><%= message %></h2>
-      <h3>Título: <%= videoData.video_details.title %></h3>
-      <img src="<%= videoData.video_details.thumbnail.url %>" alt="Thumbnail" />
+      <h3>Título: <%= video_title %></h3>
+      <img src="<%= video_thumbnail %>" alt="Thumbnail" />
       <% } else { %>
       <h2><%= message %></h2>
       <% } %>
     </div>
+    <div id="result"></div>
 
-    <div class="bottom-container">
-      <% if(typeof success != "undefined" && success) { %>
-      <div class="success">
-        <p><%= song_title %></p>
-        <a href="<%= song_link %>"
-          ><button id="download-btn">DOWNLOAD</button></a
-        >
-      </div>
-      <% } else if(typeof success != "undefined" && !success) {%>
-      <div class="errors">
-        <p><%= message %></p>
-      </div>
-      <% } %>
-    </div>
+    <script src="/js/script.js"></script>
   </body>
 </html>
