@@ -12,35 +12,66 @@
     <title>Youtube MP3 Converter</title>
   </head>
   <body>
-    <div class="top-container">
-      <form action="/search-video" method="POST" id="form">
-        <a href="/" style="text-decoration: none; color: white"
-          ><h1><i class="fab fa-youtube"></i>Song 2 U</h1></a
-        >
-        <h4>Insira abaixo o link do YouTube</h4>
-        <div>
-          <input
-            type="text"
-            id="videoUrl"
-            name="videoUrl"
-            placeholder="Link do YouTube"
-          />
-          <button id="search-btn">Buscar</button>
-          <div id="loading" style="display: none">🔄 Carregando...</div>
-        </div>
-      </form>
-    </div>
+    <div>
+      <div class="top-container">
+        <form action="/search-video" method="POST" id="form">
+          <a href="/" style="text-decoration: none; color: white"
+            ><h1><i class="fab fa-youtube"></i>Song 2 U</h1></a
+          >
+          <h4>Insira abaixo o link do YouTube</h4>
+          <div>
+            <input
+              type="text"
+              id="videoUrl"
+              name="videoUrl"
+              placeholder="Link do YouTube"
+            />
+            <button id="search-btn">Buscar</button>
+            <div id="loading" style="display: none">🔄 Carregando...</div>
+          </div>
+        </form>
+      </div>
 
-    <div class="container">
-      <% if (typeof success != "undefined" && success ) { %>
-      <h2><%= message %></h2>
-      <h3>Título: <%= video_title %></h3>
-      <img src="<%= video_thumbnail %>" alt="Thumbnail" />
-      <% } else { %>
-      <h2><%= message %></h2>
-      <% } %>
+      <div class="container">
+        <% if (typeof success != "undefined" && success ) { %>
+        <h3><%= video_title %></h3>
+
+        <div class="video_wrapper">
+          <iframe
+            src="https://www.youtube.com/embed/<%= video_id %>"
+            frameborder="0"
+            width="720"
+            height="420"
+          ></iframe>
+          <div class="thumbnails">
+            <img
+              class="img_thumb"
+              src="<%= video_thumbnail %>"
+              alt="Thumbnail"
+              width=""
+            />
+            <img
+              class="img_thumb"
+              src="<%= video_thumbnail %>"
+              alt="Thumbnail"
+            />
+            <img
+              class="img_thumb"
+              src="<%= video_thumbnail %>"
+              alt="Thumbnail"
+            />
+            <img
+              class="img_thumb"
+              src="<%= video_thumbnail %>"
+              alt="Thumbnail"
+            />
+          </div>
+        </div>
+        <% } else { %>
+        <h2><%= message %></h2>
+        <% } %>
+      </div>
     </div>
-    <div id="result"></div>
 
     <script src="/js/script.js"></script>
   </body>

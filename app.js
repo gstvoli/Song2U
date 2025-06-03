@@ -44,12 +44,12 @@ app.post('/search-video', async (req, res) => {
   const videoInfo = await play.video_basic_info(url);
   // const streams = await play.stream_from_info(videoInfo);
 
-  // console.log(streams);
-  console.log('ata');
+  console.log(videoInfo.video_details.thumbnails);
   if (videoInfo) {
     return res.render('index', {
       success: true,
       video_title: videoInfo.video_details.title,
+      video_id: videoInfo.video_details.id,
       video_thumbnail: videoInfo.video_details.thumbnails[0].url,
       message: ''
       // qualities: streams.qualities
