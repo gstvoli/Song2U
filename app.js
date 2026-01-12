@@ -32,49 +32,70 @@ app.get('/', (req, res) => {
 });
 
 app.post('/search-video', async (req, res) => {
-  const url = req.body.videoUrl;
+  const { url } = req.body;
 
   if (!url) {
-    return res.render('index', {
+    return res.json({
       success: false,
       message: 'URL não informada.'
     });
   }
 
-  const videoInfo = await play.video_basic_info(url);
-  // const streams = await play.stream_from_info(videoInfo);
+  try {
+    const isValid = play.yt_validate(url);
+    console.log('Tipo de URL validada:', isValid);
+    let videoInfo;
+    let playlist;
 
-  console.log(videoInfo.video_details.thumbnails);
-  if (videoInfo) {
-    return res.render('index', {
-      success: true,
-      video_title: videoInfo.video_details.title,
-      video_id: videoInfo.video_details.id,
-      video_thumbnail: videoInfo.video_details.thumbnails[0].url,
-      message: ''
-      // qualities: streams.qualities
-    });
-  } else {
-    res.render('index', {
+    if (url.startsWith('https') && isValid === 'video') {
+      videoInfo = await play.video_basic_info(url);
+    } else if (isValid === 'search' || isValid === false) {
+      const results = await play.search(url, { limit: 1 });
+      if (results.length > 0) {
+        videoInfo = { video_details: results[0] };
+      }
+    } else if (isValid === 'playlist') {
+      playlist = await play.playlist_info(url);
+    }
+
+    if (videoInfo) {
+      return res.json({
+        valid: true,
+        success: true,
+        title: videoInfo.video_details.title,
+        thumbnail: videoInfo.video_details.thumbnails[0].url,
+        video_id: videoInfo.video_details.id,
+        qualities: ['360p', '480p', '720p', '1080p']
+      });
+    } else if (playlist) {
+      return res.json({
+        valid: true,
+        success: true,
+        title: playlist.title[0],
+        thumbnail: playlist.thumbnail.url,
+        video_id: playlist.id,
+        qualities: playlist.videos.map((video) => video.qualities)
+      });
+    } else {
+      return res.json({
+        success: false,
+        message: 'Erro ao buscar vídeo.'
+      });
+    }
+  } catch (error) {
+    console.error('Erro no servidor:', error);
+    return res.json({
       success: false,
-      message: 'Erro ao buscare vídeo.'
+      message: 'Erro interno ao processar vídeo.'
     });
   }
 });
-
-// app.post('/api/search-video', async (req, res) => {
-//   try {
-//     const data = await
-//   } catch (error) {
-
-//   }
-// })
 
 app.post('/convert-mp3', async (req, res) => {
   const videoId = req.body.videoID;
   console.log(videoId);
   if (videoId === undefined || videoId === '' || videoId === null) {
-    return res.render('index', {
+    return res.json({
       success: false,
       message: 'Please enter a video ID'
     });
@@ -93,13 +114,13 @@ app.post('/convert-mp3', async (req, res) => {
     const fetchResponse = await fetchAPI.json();
 
     if (fetchResponse.status === 'ok')
-      return res.render('index', {
+      return res.json({
         success: true,
         song_title: fetchResponse.title,
         song_link: fetchResponse.link
       });
     else
-      return res.render('index', {
+      return res.json({
         success: false,
         message: fetchResponse.msg
       });
