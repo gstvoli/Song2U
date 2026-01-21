@@ -4,8 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchBtn) {
     searchBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      console.log('Botão de busca clicado.');
+
       const urlInput = document.getElementById('videoUrl');
+      const loading = document.getElementById('loading');
       const resultDiv = document.getElementById('result');
 
       if (!urlInput) {
@@ -13,13 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (!resultDiv) {
-        console.error('Erro: O elemento "result" não foi encontrado.');
-        return;
-      }
+      loading.style.display = 'block';
+      loading.style.animation = 'blink 1s linear infinite';
+      resultDiv.style.display = 'none';
 
       const url = urlInput.value;
-      resultDiv.innerHTML = '🔄 Carregando...';
 
       try {
         const res = await fetch('/search-video', {
@@ -43,14 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
               frameborder="0"
               width="720"
               height="420"
+              id="video-player"
             ></iframe>
             <img src="${
               data.thumbnail
             }" alt="Thumbnail" style="width:100%; max-width:300px;">
-            <div> 
+            <div class="qualities_wrapper"> 
               <p>Qualidades disponíveis:</p>
               <ul>  
-                ${data.qualities.map((q) => `<li>${q}</li>`).join('')}
+                ${data.qualities.map((q) => `<a href="/"><li>${q}</li></a>`).join('')}
               </ul>
             </div>
             <div class="btn-download">
@@ -61,6 +61,25 @@ document.addEventListener('DOMContentLoaded', () => {
             </form>
       </div>
           `;
+
+          const videoPromise = new Promise((resolve) => {
+            const iframe = document.getElementById('video-player');
+            iframe.onload = () => resolve();
+          });
+
+          const thumbnailPromise = new Promise((resolve) => {
+            const img = resultDiv.querySelector('img');
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+
+          Promise.all([videoPromise, thumbnailPromise]).then(() => {
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) loadingElement.style.animation = 'none';
+
+            resultDiv.style.display = 'flex';
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+          });
 
           const downloadBtn = document.getElementById('download-btn');
         } else {
