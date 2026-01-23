@@ -37,16 +37,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.valid) {
           resultDiv.innerHTML = `
             <h3>${data.title}</h3>
-            <iframe
-              src="https://www.youtube.com/embed/${data.video_id}"
-              frameborder="0"
-              width="720"
-              height="420"
-              id="video-player"
-            ></iframe>
-            <img src="${
-              data.thumbnail
-            }" alt="Thumbnail" style="width:100%; max-width:300px;">
+            <div class="result_wrapper">
+              <div>
+              <iframe
+                src="https://www.youtube.com/embed/${data.video_id}"
+                frameborder="0"
+                width="620"
+                height="350"
+                id="video-player"
+              ></iframe>
+              </div>
+              <div class="channel_info">
+                <div class="channel_info_header">
+                    <img src="${data.channelInfo[2]}" alt="Channel Icon" class="channel_icon">
+                  <h4><a href="${data.channelInfo[1]}" target="_blank">${data.channelInfo[0]}</a></h4>
+                </div>
+                </div>
+                <img src="${
+                  data.thumbnail
+                }" alt="Thumbnail" style="width:100%; max-width:200px;">
+                </div>
             <div class="qualities_wrapper"> 
               <p>Qualidades disponíveis:</p>
               <ul>  

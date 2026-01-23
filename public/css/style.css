@@ -77,6 +77,18 @@ ul {
   text-align: center;
 }
 
+.result_wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.channel_info_header {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
 .qualities_wrapper ul a {
   background-color: rgb(48, 114, 255);
   color: #000;

@@ -59,13 +59,30 @@ app.post('/search-video', async (req, res) => {
     }
 
     if (videoInfo) {
+      const thumb = videoInfo.video_details.thumbnails;
+      const bestThumb =
+        thumb && thumb.length > 0 ? thumb[thumb.length - 1].url : '';
+      console.log(videoInfo.video_details.channel);
+      // console.log(videoInfo.channel.icons[1].url);
       return res.json({
         valid: true,
         success: true,
         title: videoInfo.video_details.title,
-        thumbnail: videoInfo.video_details.thumbnails[0].url,
+        thumbnail: bestThumb,
         video_id: videoInfo.video_details.id,
-        qualities: ['360p', '480p', '720p', '1080p']
+        qualities: ['360p', '480p', '720p', '1080p'],
+        channelInfo: [
+          videoInfo.video_details.channel.name,
+          videoInfo.video_details.channel.url,
+          videoInfo.video_details.channel.icons[0].url,
+          videoInfo.video_details.channel.id,
+          videoInfo.video_details.channel.verified,
+          videoInfo.video_details.channel.subscribers,
+          videoInfo.video_details.channel.videos,
+          videoInfo.video_details.channel.description,
+          videoInfo.video_details.channel.joined,
+          videoInfo.video_details.channel.banners
+        ]
       });
     } else if (playlist) {
       return res.json({
@@ -74,7 +91,19 @@ app.post('/search-video', async (req, res) => {
         title: playlist.title[0],
         thumbnail: playlist.thumbnail.url,
         video_id: playlist.id,
-        qualities: playlist.videos.map((video) => video.qualities)
+        qualities: playlist.videos.map((video) => video.qualities),
+        channelInfo: [
+          playlist.videos[0].channel.name,
+          playlist.videos[0].channel.url,
+          playlist.videos[0].channel.icon,
+          playlist.videos[0].channel.id,
+          playlist.videos[0].channel.verified,
+          playlist.videos[0].channel.subscribers,
+          playlist.videos[0].channel.videos,
+          playlist.videos[0].channel.description,
+          playlist.videos[0].channel.joined,
+          playlist.videos[0].channel.banners
+        ]
       });
     } else {
       return res.json({
