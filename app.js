@@ -1,20 +1,29 @@
-//required packages
+const fs = require('fs');
 const express = require('express');
 const fetch = require('node-fetch');
+const ffmpeg = require('fluent-ffmpeg');
 const play = require('play-dl');
+const rawData = fs.readFileSync('cookies.txt', 'utf8');
 require('dotenv').config();
 
-//create the express server
-const app = express();
+ffmpeg.setFfmpegPath('C:\Users\Gusgo\Downloads\ffmpeg\bin\ffmpeg.exe');
 
-//server port number
+const cookiesJSON = JSON.parse(rawData);
+const cookieString = cookiesJSON.map((c) => `${c.name}=${c.value}`).join('; ');
+
+play.setToken({
+  youtube: {
+    cookie: cookieString
+  }
+});
+
+const app = express();
 const PORT = process.env.PORT || 8080;
 const HOST = process.env.HOST;
-//set template engine
+
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
-//needed to parse html data for POST request
 app.use(
   express.urlencoded({
     extended: true
@@ -49,6 +58,7 @@ app.post('/search-video', async (req, res) => {
 
     if (url.startsWith('https') && isValid === 'video') {
       videoInfo = await play.video_basic_info(url);
+      console.log('Vídeo encontrado:', videoInfo.video_details.title);
     } else if (isValid === 'search' || isValid === false) {
       const results = await play.search(url, { limit: 1 });
       if (results.length > 0) {
@@ -62,7 +72,7 @@ app.post('/search-video', async (req, res) => {
       const thumb = videoInfo.video_details.thumbnails;
       const bestThumb =
         thumb && thumb.length > 0 ? thumb[thumb.length - 1].url : '';
-      console.log(videoInfo.video_details.channel);
+      // console.log(videoInfo.video_details.channel);
       // console.log(videoInfo.channel.icons[1].url);
       return res.json({
         valid: true,
@@ -74,7 +84,7 @@ app.post('/search-video', async (req, res) => {
         channelInfo: [
           videoInfo.video_details.channel.name,
           videoInfo.video_details.channel.url,
-          videoInfo.video_details.channel.icons[0].url,
+          videoInfo.video_details.channel.icons[1].url,
           videoInfo.video_details.channel.id,
           videoInfo.video_details.channel.verified,
           videoInfo.video_details.channel.subscribers,
@@ -85,11 +95,13 @@ app.post('/search-video', async (req, res) => {
         ]
       });
     } else if (playlist) {
+      // console.log('Playlist encontrada:', playlist.videos);
+      console.log('Playlist encontrada:', playlist.videos[0].id);
       return res.json({
         valid: true,
         success: true,
         title: playlist.title[0],
-        thumbnail: playlist.thumbnail.url,
+        thumbnail: playlist.videos[0].thumbnail.url,
         video_id: playlist.id,
         qualities: playlist.videos.map((video) => video.qualities),
         channelInfo: [
@@ -120,39 +132,49 @@ app.post('/search-video', async (req, res) => {
   }
 });
 
-app.post('/convert-mp3', async (req, res) => {
-  const videoId = req.body.videoID;
-  console.log(videoId);
+// async function convert_mp3(url, res) {
+//   let stream = await play.stream(url);
+
+//   ffmpeg(stream.stream)
+//     .audioBitrate(128)
+//     .toFormat('mp3')
+//     .on('end', () => console.log('Finishied!'))
+//     .on('error', (err) => console.error(err))
+//     .pipe(res);
+// }
+
+app.get('/convert-mp3', async (req, res) => {
+  const videoId = req.query.videoID.trim().replace(/['"]+/g, '');
+  console.log('[' + videoId + ']');
+
   if (videoId === undefined || videoId === '' || videoId === null) {
-    return res.json({
+    return res.render('index', {
       success: false,
       message: 'Please enter a video ID'
     });
   } else {
-    const fetchAPI = await fetch(
-      `https://youtube-mp36.p.rapidapi.com/dl?id=${videoId}`,
-      {
-        method: 'GET',
-        headers: {
-          'x-rapidapi-key': process.env.API_KEY,
-          'x-rapidapi-host': process.env.API_HOST
-        }
-      }
-    );
+    try {
+      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      console.log('URL do vídeo para conversão:', videoUrl);
+      const source = await play.stream(videoUrl);
 
-    const fetchResponse = await fetchAPI.json();
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${videoId}.mp3"`
+      );
 
-    if (fetchResponse.status === 'ok')
-      return res.json({
-        success: true,
-        song_title: fetchResponse.title,
-        song_link: fetchResponse.link
-      });
-    else
-      return res.json({
-        success: false,
-        message: fetchResponse.msg
-      });
+      ffmpeg(source.stream)
+        .audioBitrate(128)
+        .toFormat('mp3')
+        .on('error', (err) => {
+          console.error('Erro no FFmpeg:', err);
+          if (!res.headersSent) res.status(500).send('Erro na conversão');
+        })
+        .pipe(res);
+    } catch (error) {
+      console.error('❌ Erro ao converter vídeo:', error.message);
+    }
   }
 });
 

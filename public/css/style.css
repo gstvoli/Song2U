@@ -18,13 +18,14 @@
 }
 
 body {
+  background-color: #0f0f0f;
   color: white;
   font-family: 'Orbitron', sans-serif;
 }
 
 .top-container {
-  height: 40vh;
-  background-color: red;
+  background-color: rgb(154, 38, 250);
+  height: 25vh;
   margin-bottom: 20px;
 }
 
@@ -39,7 +40,7 @@ body {
 h3,
 p,
 ul {
-  color: black;
+  color: #fff;
 }
 
 .video_wrapper {
@@ -69,8 +70,8 @@ ul {
 
 .qualities_wrapper ul {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(1, 1fr);
   gap: 10px;
   list-style: none;
   padding: 10px;
@@ -80,16 +81,39 @@ ul {
 .result_wrapper {
   display: flex;
   flex-direction: row;
+  margin-top: 20px;
   gap: 20px;
 }
 
-.channel_info_header {
+.info_wrapper {
   display: flex;
-  flex-direction: row;
-  gap: 10px;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
 }
 
-.qualities_wrapper ul a {
+.channel_info_header {
+  background-color: #4b4b4b;
+  border-radius: 25px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+}
+
+.channel_info_header img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+
+.channel_info_header h4 > a {
+  text-decoration: none;
+  color: white;
+}
+
+.qualities_wrapper ul button {
   background-color: rgb(48, 114, 255);
   color: #000;
   margin: 5px 0;
@@ -97,15 +121,19 @@ ul {
   text-decoration: none;
   transition: 0.2s ease-out;
 }
-.qualities_wrapper ul a:hover {
+.qualities_wrapper ul button:hover {
   background-color: rgb(0, 255, 149);
   cursor: hand;
   padding: 25px;
   transform: scale(1.05);
   transition: 0.2s ease-out;
 }
+
 .img_thumb {
-  width: 160px;
+  width: 100%;
+  max-width: 200px;
+  border-radius: 8px;
+  box-shadow: 0px 0px 9px 5px #4b4b4b;
 }
 
 .bottom-container {
@@ -117,14 +145,13 @@ ul {
 
 #form {
   width: 600px;
-  height: 40vh;
+  height: 28vh;
   margin: auto;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   flex-direction: column;
   gap: 10px;
-  padding-top: 20px;
 }
 
 #form h1 {
@@ -133,7 +160,7 @@ ul {
 }
 
 #form input {
-  width: 300px;
+  flex: 0 0 25rem;
   padding: 14px;
   border-top-left-radius: 15px;
   border-bottom-left-radius: 15px;
@@ -141,6 +168,7 @@ ul {
   font-family: inherit;
   outline: none;
   box-shadow: 2px 2px 5px gray;
+  box-sizing: border-box;
 }
 
 #form button {
@@ -157,8 +185,8 @@ ul {
 
 #form button:hover {
   color: white;
-  background-color: red;
-  border: 1px solid red;
+  background-color: rgb(154, 38, 250);
+  border: 1px solid rgb(154, 38, 250);
   transform: scale(1.1);
 }
 
@@ -193,7 +221,7 @@ ul {
 }
 
 #loading {
-  color: #000;
+  color: #fff;
 }
 
 #download-btn {
@@ -202,14 +230,14 @@ ul {
   padding: 12px;
   margin: 10px 0;
   color: white;
-  background-color: red;
+  background-color: rgb(154, 38, 250);
   border-radius: 5px;
   text-decoration: none;
   box-shadow: 2px 2px 5px gray;
   cursor: pointer;
   letter-spacing: 1px;
   font-family: inherit;
-  border: 1px solid red;
+  border: 1px solid rgb(154, 38, 250);
   transition: 0.3s ease-out;
 }
 

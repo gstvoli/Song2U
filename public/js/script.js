@@ -47,29 +47,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 id="video-player"
               ></iframe>
               </div>
-              <div class="channel_info">
+              <div class="info_wrapper">
                 <div class="channel_info_header">
-                    <img src="${data.channelInfo[2]}" alt="Channel Icon" class="channel_icon">
+                  <img src="${data.channelInfo[2]}" alt="Channel Icon"    class="channel_icon">
                   <h4><a href="${data.channelInfo[1]}" target="_blank">${data.channelInfo[0]}</a></h4>
                 </div>
+                <div class="thumbnail_wrapper">
+                <img src="${data.thumbnail}" class="img_thumb" alt="Thumbnail">
                 </div>
-                <img src="${
-                  data.thumbnail
-                }" alt="Thumbnail" style="width:100%; max-width:200px;">
-                </div>
+              </div>
+            </div>
             <div class="qualities_wrapper"> 
               <p>Qualidades disponíveis:</p>
               <ul>  
-                ${data.qualities.map((q) => `<a href="/"><li>${q}</li></a>`).join('')}
+                ${data.qualities.map((q) => `<button><li>${q}</li></button>`).join('')}
               </ul>
             </div>
             <div class="btn-download">
-            <form action="/convert-mp3/${data.video_id}" method="POST">
-              <a class="btn-download" id="download-btn">
+            <form action="/convert-mp3" method="GET">
+              <input type="hidden" name="videoID" value="${data.video_id}">
+              <button class="btn-download" id="download-btn">
                 ⬇️ Baixar MP3
-              </a>
+              </button>
             </form>
-      </div>
+          </div>
           `;
 
           const videoPromise = new Promise((resolve) => {
@@ -88,10 +89,35 @@ document.addEventListener('DOMContentLoaded', () => {
             if (loadingElement) loadingElement.style.animation = 'none';
 
             resultDiv.style.display = 'flex';
+            loading.style.display = 'none';
             resultDiv.scrollIntoView({ behavior: 'smooth' });
           });
 
           const downloadBtn = document.getElementById('download-btn');
+          if (downloadBtn) {
+            downloadBtn.addEventListener('click', async (btnEvent) => {
+              btnEvent.preventDefault();
+              downloadBtn.innerText = '⏳ Convertendo...';
+
+              const videoID = data.video_id;
+
+              try {
+                const resDownload = await fetch(
+                  `/convert-mp3?videoID=${videoID}`
+                );
+                const dataDownload = await resDownload.json();
+
+                if (dataDownload.success) {
+                  window.location.href = dataDownload.song_link;
+                  downloadBtn.innerText = '✅ Baixado';
+                } else {
+                  alert('Erro na conversão: ' + dataDownload.message);
+                }
+              } catch (error) {
+                console.error('Erro na conversão:', error);
+              }
+            });
+          }
         } else {
           resultDiv.innerHTML = `<p>Erro: ${data.message}</p>`;
         }
