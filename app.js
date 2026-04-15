@@ -1,21 +1,13 @@
-const fs = require('fs');
-const express = require('express');
-const fetch = require('node-fetch');
 const ffmpeg = require('fluent-ffmpeg');
-const play = require('play-dl');
-const rawData = fs.readFileSync('cookies.txt', 'utf8');
+const express = require('express');
+const path = require('path');
+const { execFile, spawn } = require('child_process');
+
+const YTDL_PATH = path.join(__dirname, 'bin', 'yt-dlp.exe');
+const FFMPEG_PATH = path.join(__dirname, 'bin', 'ffmpeg.exe');
+
+ffmpeg.setFfmpegPath(FFMPEG_PATH);
 require('dotenv').config();
-
-ffmpeg.setFfmpegPath('C:\Users\Gusgo\Downloads\ffmpeg\bin\ffmpeg.exe');
-
-const cookiesJSON = JSON.parse(rawData);
-const cookieString = cookiesJSON.map((c) => `${c.name}=${c.value}`).join('; ');
-
-play.setToken({
-  youtube: {
-    cookie: cookieString
-  }
-});
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -40,144 +32,128 @@ app.get('/', (req, res) => {
   });
 });
 
+const jobs = {};
+
 app.post('/search-video', async (req, res) => {
   const { url } = req.body;
 
   if (!url) {
-    return res.json({
-      success: false,
-      message: 'URL não informada.'
-    });
+    return res
+      .status(400)
+      .json({ success: false, message: 'URL não informada' });
   }
 
-  try {
-    const isValid = play.yt_validate(url);
-    console.log('Tipo de URL validada:', isValid);
-    let videoInfo;
-    let playlist;
-
-    if (url.startsWith('https') && isValid === 'video') {
-      videoInfo = await play.video_basic_info(url);
-      console.log('Vídeo encontrado:', videoInfo.video_details.title);
-    } else if (isValid === 'search' || isValid === false) {
-      const results = await play.search(url, { limit: 1 });
-      if (results.length > 0) {
-        videoInfo = { video_details: results[0] };
+  execFile(
+    YTDL_PATH,
+    ['--dump-json', '--no-playlist', url],
+    (err, stdout, stderr) => {
+      if (err) {
+        console.log('Erro yt-dlp: ', stderr);
+        return res
+          .status(500)
+          .json({ success: false, message: 'Erro ao buscar vídeo' });
       }
-    } else if (isValid === 'playlist') {
-      playlist = await play.playlist_info(url);
-    }
 
-    if (videoInfo) {
-      const thumb = videoInfo.video_details.thumbnails;
-      const bestThumb =
-        thumb && thumb.length > 0 ? thumb[thumb.length - 1].url : '';
-      // console.log(videoInfo.video_details.channel);
-      // console.log(videoInfo.channel.icons[1].url);
-      return res.json({
-        valid: true,
-        success: true,
-        title: videoInfo.video_details.title,
-        thumbnail: bestThumb,
-        video_id: videoInfo.video_details.id,
-        qualities: ['360p', '480p', '720p', '1080p'],
-        channelInfo: [
-          videoInfo.video_details.channel.name,
-          videoInfo.video_details.channel.url,
-          videoInfo.video_details.channel.icons[1].url,
-          videoInfo.video_details.channel.id,
-          videoInfo.video_details.channel.verified,
-          videoInfo.video_details.channel.subscribers,
-          videoInfo.video_details.channel.videos,
-          videoInfo.video_details.channel.description,
-          videoInfo.video_details.channel.joined,
-          videoInfo.video_details.channel.banners
-        ]
-      });
-    } else if (playlist) {
-      // console.log('Playlist encontrada:', playlist.videos);
-      console.log('Playlist encontrada:', playlist.videos[0].id);
-      return res.json({
-        valid: true,
-        success: true,
-        title: playlist.title[0],
-        thumbnail: playlist.videos[0].thumbnail.url,
-        video_id: playlist.id,
-        qualities: playlist.videos.map((video) => video.qualities),
-        channelInfo: [
-          playlist.videos[0].channel.name,
-          playlist.videos[0].channel.url,
-          playlist.videos[0].channel.icon,
-          playlist.videos[0].channel.id,
-          playlist.videos[0].channel.verified,
-          playlist.videos[0].channel.subscribers,
-          playlist.videos[0].channel.videos,
-          playlist.videos[0].channel.description,
-          playlist.videos[0].channel.joined,
-          playlist.videos[0].channel.banners
-        ]
-      });
-    } else {
-      return res.json({
-        success: false,
-        message: 'Erro ao buscar vídeo.'
-      });
+      try {
+        const info = JSON.parse(stdout);
+
+        return res.json({
+          valid: true,
+          success: true,
+          title: info.title,
+          thumbnail: info.thumbnail,
+          video_id: info.id,
+          duration: info.duration,
+          channel: info.uploader,
+          channel_url: info.uploader_url,
+          qualities: info.formats
+            .filter((f) => f.height)
+            .map((f) => `${f.height}p`)
+            .filter((v, i, a) => a.indexOf(v) === i)
+        });
+      } catch (e) {
+        return res
+          .status(500)
+          .json({ success: false, message: 'Erro ao processar informações.' });
+      }
     }
-  } catch (error) {
-    console.error('Erro no servidor:', error);
-    return res.json({
-      success: false,
-      message: 'Erro interno ao processar vídeo.'
-    });
-  }
+  );
 });
-
-// async function convert_mp3(url, res) {
-//   let stream = await play.stream(url);
-
-//   ffmpeg(stream.stream)
-//     .audioBitrate(128)
-//     .toFormat('mp3')
-//     .on('end', () => console.log('Finishied!'))
-//     .on('error', (err) => console.error(err))
-//     .pipe(res);
-// }
 
 app.get('/convert-mp3', async (req, res) => {
-  const videoId = req.query.videoID.trim().replace(/['"]+/g, '');
-  console.log('[' + videoId + ']');
+  const videoId = req.query.videoID;
 
-  if (videoId === undefined || videoId === '' || videoId === null) {
-    return res.render('index', {
-      success: false,
-      message: 'Please enter a video ID'
-    });
-  } else {
-    try {
-      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-      console.log('URL do vídeo para conversão:', videoUrl);
-      const source = await play.stream(videoUrl);
-
-      res.setHeader('Content-Type', 'audio/mpeg');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${videoId}.mp3"`
-      );
-
-      ffmpeg(source.stream)
-        .audioBitrate(128)
-        .toFormat('mp3')
-        .on('error', (err) => {
-          console.error('Erro no FFmpeg:', err);
-          if (!res.headersSent) res.status(500).send('Erro na conversão');
-        })
-        .pipe(res);
-    } catch (error) {
-      console.error('❌ Erro ao converter vídeo:', error.message);
-    }
+  if (!videoId) {
+    return res
+      .status(400)
+      .json({ success: false, message: 'ID do Vídeo não informado' });
   }
-});
 
+  const jobID = uuidv4();
+  const outputPath = path.join(os.tmpDir(), `${jobID}.mp3`);
+
+  const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+  res.setHeader('Content-Type', 'audio/mpeg');
+  res.setHeader('Content-Disposition', `attachment; filename="${videoId}.mp3"`);
+
+  const ytDlp = spawn(YTDL_PATH, [
+    '--no-playlist',
+    '--no-continue',
+    '-f',
+    'bestaudio',
+    '-o',
+    '-',
+    '--ffmpeg-location',
+    FFMPEG_PATH,
+    videoUrl
+  ]);
+
+  ffmpeg(ytDlp.stdout)
+    .audioBitrate(128)
+    .toFormat('mp3')
+    .on('error', (err) => {
+      if (
+        err.message.includes('Output stream closed') ||
+        err.message.includes('SIGKILL')
+      ) {
+        console.log('Stream encerrado pelo cliente.');
+        return;
+      }
+      console.error('Erro FFmpeg: ', err.message);
+      if (!res.headersSent) {
+        res.status(500).send('Erro na conversão');
+      }
+    })
+    .on('end', () => console.log('Conversão finalizada.', videoId))
+    .pipe(res);
+
+  req.on('close', () => {
+    ytDlp.kill('SIGKILL');
+    console.log('Cliente desconectado, processo yt-dlp encerrado.');
+  });
+
+  ytDlp.stderr.on('data', (data) => {
+    console.log('yt-dlp:', data.toString().trim());
+  });
+
+  ytDlp.on('error', (err) => {
+    console.error('Erro ao iniciar yt-dlp: ', err.message);
+    if (!res.headersSent) {
+      res.status(500).send('Erro interno');
+    }
+  });
+
+  ytDlp.on('close', (code) =>
+    console.log(`⚠️ yt-dlp encerrou com código: ${code}`)
+  );
+  ytDlp.on('error', (err) => console.error('❌ Erro yt-dlp:', err.message));
+
+  res.on('close', () => console.log('🔌 Conexão com cliente encerrada'));
+  res.on('finish', () => console.log('✅ Resposta enviada completamente'));
+
+  req.on('close', () => console.log('📵 Cliente desconectou'));
+});
 //start the server
 app.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);
